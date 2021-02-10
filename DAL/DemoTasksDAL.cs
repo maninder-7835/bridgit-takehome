@@ -13,10 +13,10 @@ namespace Tasklify.DAL
         int _current_id = 0;
         IDictionary<int, TasklifyTask> _tasks = new ConcurrentDictionary<int, TasklifyTask>();
 
-        public async Task<TasklifyTask> AddAsync(string summary, string description)
+        public async Task<TasklifyTask> AddAsync(string summary, string description, int assignee)
         {
             _current_id += 1;
-            var tmpTask = new TasklifyTask(_current_id, summary, description);
+            var tmpTask = new TasklifyTask(_current_id, summary, description, assignee);
             _tasks.Add(tmpTask.Id, tmpTask);
 
             return await Task.FromResult(tmpTask);
@@ -39,6 +39,7 @@ namespace Tasklify.DAL
             return await Task.Run(() => {
                 _tasks[id].Summary = task.Summary;
                 _tasks[id].Description = task.Description;
+                _tasks[id].Assignee = task.Assignee;
                 return _tasks[id];
             });
         }

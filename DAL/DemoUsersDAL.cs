@@ -5,6 +5,7 @@ using System.Linq;
 
 using Tasklify.Interfaces;
 using Tasklify.Contracts;
+using System;
 
 namespace Tasklify.DAL
 {
@@ -17,9 +18,17 @@ namespace Tasklify.DAL
         {
             _current_id += 1;
             var tmpUser = new TasklifyUser(_current_id, email, name);
+            if (isEmailDuplicate(email))
+                throw new FormatException(string.Format("User with email {0} already exists.", email));
             _users.Add(tmpUser.Id, tmpUser);
 
             return await Task.FromResult(tmpUser);
+        }
+
+        // Checking for users who already have the email
+        private bool isEmailDuplicate(string email)
+        {
+            return _users.Values.Where(a => a.Email == email).FirstOrDefault() != null ? true : false;
         }
 
         public async Task<IList<TasklifyUser>> GetUsersAsync()

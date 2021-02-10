@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.JsonPatch;
+using Microsoft.AspNetCore.JsonPatch.Operations;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Tasklify.Contracts;
 using Tasklify.Interfaces;
@@ -47,7 +50,7 @@ namespace Tasklify.Controllers
                 // Validating the task before calling the AddAsync method
                 ValidateTask(task);
 
-                var tmpTask = await _tDal.AddAsync(task.Summary, task.Description);                
+                var tmpTask = await _tDal.AddAsync(task.Summary, task.Description, task.Assignee);                
                 return Ok(tmpTask);
             }
             catch(FormatException fex)
@@ -83,6 +86,36 @@ namespace Tasklify.Controllers
             }
         }
 
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> UpdateById(int id, [FromBody] JsonPatchDocument<TasklifyTask> patch)
+        {
+            try
+            {
+                var entity = await _tDal.GetByIdAsync(id);
+                if (entity == null)
+                    return NotFound();
+
+                ValidatePatchForValidAssignee(patch);
+
+                patch.ApplyTo(entity, ModelState);
+
+                return Ok(entity);
+
+            }
+            catch (FormatException fex)
+            {
+                string errorMessage = string.Format("Error while updating task with \r\nid:{0}. \r\nException:{1}", id, fex.Message);
+                return StatusCode(StatusCodes.Status400BadRequest, errorMessage);
+            }
+            catch (Exception ex)
+            {
+                string errorMessage = string.Format("Error while updating task with \r\nid:{0}. \r\nException:{1}", id, ex.Message);
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, errorMessage);
+            }
+        }
+
+        
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteById(int id)
         {
@@ -104,9 +137,45 @@ namespace Tasklify.Controllers
 
             if (!string.IsNullOrWhiteSpace(task.Description) && task.Description.Length > 500)
                 errorMessage += " Task Description should be 500 characters or less.";
+            
+            if (!IsValidAssignee(task.Assignee).Result)
+                errorMessage += " Task Assignee is not valid User.";
 
             if (!string.IsNullOrEmpty(errorMessage))
                 throw new FormatException(errorMessage);
+        }
+
+        /// <summary>
+        /// Validating the assigned ID with list of Users
+        /// </summary>
+        /// <param name="assignee"></param>
+        /// <returns></returns>
+        private async Task<bool> IsValidAssignee(int assignee)
+        {
+            if (assignee != 0)
+            {
+                var users = await _uDal.GetUsersAsync();
+                return users.Where(a => a.Id == assignee).FirstOrDefault() != null ? true : false;                
+            }
+            else
+                return true;
+        }
+
+        /// <summary>
+        /// Validating Assignee ID for the Patch
+        /// </summary>
+        /// <param name="patch"></param>
+        private void ValidatePatchForValidAssignee(JsonPatchDocument<TasklifyTask> patch)
+        {
+            foreach (var operation in patch.Operations)
+            {
+                if (operation.path.ToLower() == "/assignee_id" && operation.op.ToLower() == "replace")
+                {
+                    if (!IsValidAssignee(Convert.ToInt32(operation.value)).Result)
+                        throw new FormatException("Task Assignee is not valid User");
+                }
+            }
+
         }
     }
 }

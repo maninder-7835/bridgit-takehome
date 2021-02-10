@@ -11,13 +11,17 @@ namespace Tasklify.Contracts
         [JsonProperty("description", NullValueHandling=NullValueHandling.Ignore)]
         public string Description {get; set;}
 
-        public TasklifyTask(int id, string summary, string description)
+        [JsonProperty("assignee_id", NullValueHandling = NullValueHandling.Ignore)]
+        public int Assignee { get; set; }
+
+        public TasklifyTask(int id, string summary, string description, int assignee)
         {
             if (!string.IsNullOrWhiteSpace(summary))
             {
                 Id = id;
                 Summary = summary;
                 Description = description;
+                Assignee = assignee;
             }
         }
     }

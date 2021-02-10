@@ -8,7 +8,7 @@ namespace Tasklify.Interfaces
     public interface ITasksDAL
     {
         Task<IList<TasklifyTask>> GetAllAsync();
-        Task<TasklifyTask> AddAsync(string summary, string description);
+        Task<TasklifyTask> AddAsync(string summary, string description, int assignee);
         Task<bool> RemoveByIdAsync(int id);
         Task<TasklifyTask> GetByIdAsync(int id);
         Task<TasklifyTask> UpdateByIdAsync(int id, TasklifyTask user);
