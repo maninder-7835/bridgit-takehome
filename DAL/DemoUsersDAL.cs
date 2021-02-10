@@ -34,6 +34,13 @@ namespace Tasklify.DAL
             });
         }
 
+        public async Task<object> GetUserByEmailAsync(string email)
+        {
+            return await Task.Run(() => {
+                return _users.Values.Where(a=>a.Email == email).FirstOrDefault();
+            });
+        }
+
         public async Task<bool> UpdateUserByIdAsync(int id, TasklifyUser user)
         {
             return await Task.Run(() => {

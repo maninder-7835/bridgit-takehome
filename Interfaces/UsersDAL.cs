@@ -12,5 +12,6 @@ namespace Tasklify.Interfaces
         Task<bool> RemoveUserByIdAsync(int id);
         Task<TasklifyUser> GetUserByIdAsync(int id);
         Task<bool> UpdateUserByIdAsync(int id, TasklifyUser user);
+        Task<object> GetUserByEmailAsync(string email);
     }
 }
